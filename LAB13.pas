@@ -35,10 +35,13 @@ VAR
 	endOfTheList:recordPointer; 
 	hoursAI,minutesAI,hoursBI,minutesBI,
 	strToIntError,totalNumberOfStores,day,
-	storeCounterOnVacation,storeNumberF: integer;
+	storeCounterOnVacation,storeNumberF,
+	allInappropriateStoresByNumber,
+	numberOfStreInteredByUser: integer;
 	hoursA,minutesA,hoursB,minutesB: string;
 	menuOptionSelection:char;
 	tmpl:recordPointer;
+	f: text;
 	
 	{Процедура выбора выходных дней}
 	procedure SelectWeekends;
@@ -69,26 +72,26 @@ VAR
 			end;						
 	
 	{Процедура добавления нового элемента в двунаправленный список}
-	procedure AddElem(var head,tail:recordPointer;number:integer; name,address,fullNameOfTheDirector:string; hAWorkingHours,
-												minAWorkingHours,hBWorkingHours,minBWorkingHours,hABreakHours,minABreakHours,
-												hBBreakHours,minBBreakHours:integer);
+	procedure AddElem(var head,tail:recordPointer;number:integer; name,address,fullNameOfTheDirector:string;
+												hAWorkingHours,minAWorkingHours,hBWorkingHours,minBWorkingHours,hABreakHours,
+												minABreakHours,hBBreakHours,minBBreakHours:integer);
 	var i:integer;											
 	begin
-		if head=nil then {не пуст ли список, если пуст, то}
+		if head=nil then
 		begin
-			New(head); {создаём элемент, указатель head уже будет иметь адрес}
-			head^.nextPointer:=nil; {никогда не забываем "занулять" указатели}
-			head^.prevPointer:=nil; {аналогично}
-			tail:=head; {изменяем указатель конца списка}
+			New(head);
+			head^.nextPointer:=nil;
+			head^.prevPointer:=nil;
+			tail:=head;
 		end
-		else {если список не пуст}
+		else
 		begin
-			New(tail^.nextPointer); {создаём новый элемент}
-			tail^.nextPointer^.prevPointer:=tail; {связь нового элемента с последним элементом списка}
-			tail:=tail^.nextPointer;{конец списка изменился и мы указатель "переставляем"}
-			tail^.nextPointer:=nil; {не забываем "занулять" указатели}
+			New(tail^.nextPointer);
+			tail^.nextPointer^.prevPointer:=tail;
+			tail:=tail^.nextPointer;
+			tail^.nextPointer:=nil;
 		end;
-		tail^.number:=number; {заносим данные}
+		tail^.number:=number;
 		tail^.name:=name;
 		tail^.address:=address;
 		tail^.fullNameOfTheDirector:=fullNameOfTheDirector;
@@ -107,58 +110,71 @@ VAR
 		totalNumberOfStores:=totalNumberOfStores+1;
 	end;
 	
-	{Процедура вывода списка}
+	{Процедура для вывода введенных магазинов}
 	procedure printTheStores(shopList:recordPointer);
 	var j:integer;
 	begin
-		clrscr;
-		if shopList=nil then
-		begin
-			writeln('Список пуст.');
-			exit;
-		end;
 		while shopList<>nil do
-		begin
-			Writeln;
-			Writeln('Номер магазина: ',shopList^.number, ' ');
-			Writeln('Название магазина: ',shopList^.name, ' ');
-			Writeln('Адрес магазина: ',shopList^.address, ' ');
-			Writeln('ФИО директора: ',shopList^.fullNameOfTheDirector, ' ');
-			writeln('Часы работы магазина: C - ',
-				shopList^.workingHours.hoursW1,
-				' : ',
-				shopList^.workingHours.minutesW1,
-				'  До - ',
-				shopList^.workingHours.hoursW2,
-				' : ',
-				shopList^.workingHours.minutesW2);
-			writeln('Перерыв: C ',
-				shopList^.breakHours.hoursB1,
-				' : ',
-				shopList^.breakHours.minutesB1,
-				' До - ',
-				shopList^.breakHours.hoursB2,
-				' : ',
-				shopList^.breakHours.minutesB2);
-			for j:=1 to 7 do 
-				begin 
-					if shopList^.workingOrNonWorkingHours[j]=0 then 
-						begin
-							writeln(weekdayPairs[j].name:11, ' - выходной');	
-						end;
-					if shopList^.workingOrNonWorkingHours[j]=1 then 
-						begin
-							writeln(weekdayPairs[j].name:11, ' - рабочий день');
-						end;
-				end;
-			shopList:=shopList^.nextPointer
+			begin
+				writeln;
+				Writeln('Номер магазина: ',shopList^.number, ' ');
+				Writeln('Название магазина: ',shopList^.name, ' ');
+				Writeln('Адрес магазина: ',shopList^.address, ' ');
+				Writeln('ФИО директора: ',shopList^.fullNameOfTheDirector, ' ');
+				writeln('Часы работы магазина: C - ',
+					shopList^.workingHours.hoursW1,
+					' : ',
+					shopList^.workingHours.minutesW1,
+					'  До - ',
+					shopList^.workingHours.hoursW2,
+					' : ',
+					shopList^.workingHours.minutesW2);
+				writeln('Перерыв: C ',
+					shopList^.breakHours.hoursB1,
+					' : ',
+					shopList^.breakHours.minutesB1,
+					' До - ',
+					shopList^.breakHours.hoursB2,
+					' : ',
+					shopList^.breakHours.minutesB2);
+				for j:=1 to 7 do 
+					begin 
+						if shopList^.workingOrNonWorkingHours[j]=0 then 
+							begin
+								writeln(weekdayPairs[j].name:11, ' - выходной');	
+							end;
+						if shopList^.workingOrNonWorkingHours[j]=1 then 
+							begin
+								writeln(weekdayPairs[j].name:11, ' - рабочий день');
+							end;
+					end;
+				shopList:=shopList^.nextPointer
 			end;
-		readkey;
+	end;
+	
+	{Процедура вывода всех данных (включает в себя: printTheStores)}
+	procedure PrintAllStores;
+	begin
+  	if totalNumberOfStores=0 then
+  		begin
+  		  clrscr;
+  			writeln('Список пуст.');
+  			readkey;
+  		end
+  	else
+  		begin
+				clrscr;
+  		  writeln('Список всех магазинов:');
+  			printTheStores(topOfTheList);
+				readkey;
+  		end;
 	end;
 	
 	{Процедура ввода времени}
 	procedure EnterTime;
-		var positionLastColon,positionHyphen,positionFirstColon,hyphenCounter,colonCounter,colonCounterFromTheMiddle:integer;
+		var positionLastColon,positionHyphen,
+				positionFirstColon,hyphenCounter,
+				colonCounter,colonCounterFromTheMiddle:integer;
 		TimeString: string;
 		x:integer;
 		colonCounterFlag,isTimeInputCorrect:boolean;
@@ -281,6 +297,7 @@ VAR
 				until (((colonCounter=2) and (hyphenCounter=1)) and (colonCounterFlag = true) and (isTimeInputCorrect = true));
 
 			end;
+	
 	{Функция проверки повтора номера магазина}	
 	Function repeatStoreNumber(shopList:recordPointer;storeNumber:integer):recordPointer;
 	var j: integer;
@@ -289,11 +306,10 @@ VAR
 				if shopList<>nil then
 					while (shopList<>nil) do
 						begin
-							if (shopList^.number=storeNumberF) then 
-								begin 
+							if (shopList^.number=storeNumberF) then
+								begin
 									writeln('Такой номер уже есть. Введите другой');
 					       	readln(storeNumberF);
-					       	repeatStoreNumber(topOfTheList,storeNumberF);
 								end
 								else
 									begin
@@ -302,19 +318,19 @@ VAR
 									end;
 						end;
 		end;
-	
-	{Процедура ввода информации об одном магазине (включает в себя: EnterTime, AddElem, SelectWeekends)}
+
+	{Процедура ввода информации об одном магазине (включает в себя: EnterTime, AddElem, SelectWeekends, repeatStoreNumber)}
 	procedure enteringAStore;
 	var
 		storeNumber,hoursAWorkingHours,minutesAWorkingHours,
 		hoursBWorkingHours,minutesBWorkingHours,
 		hoursABreakHours,minutesABreakHours,
 		hoursBBreakHours,minutesBBreakHours :integer;
-		fullNameOfTheDirectorOfTheStore,storeName,storeAddress,menuOfEnteringAStore: string;
+		fullNameOfTheDirectorOfTheStore,storeName,
+		storeAddress,menuOfEnteringAStore: string;
 			begin
 				repeat
 					clrscr;
-					writeln;
 					write('Номер магазина: '); readln(storeNumber);
 					repeatStoreNumber(topOfTheList,storeNumber);
 					storeNumber:=storeNumberF;
@@ -365,6 +381,117 @@ VAR
 							
 			end;
 			
+	{Функция для редактирования магазина (включает в себя: EnterTime, repeatStoreNumber)}	
+	Function editingAStore(shopList:recordPointer;numberOfStreInteredByUser:integer):recordPointer;
+	var i, operationNumberEnteredByTheUser,
+			storeNumber: integer;
+		begin
+			allInappropriateStoresByNumber:=0;
+			if shopList<>nil then
+				while (shopList<>nil) do
+					begin
+						if (shopList^.number=numberOfStreInteredByUser) then
+							begin
+								repeat
+									clrscr;
+									writeln('Меню редактирования');
+									writeln('1. Редактировать номер');
+									writeln('2. Редактировать название магазина');
+									writeln('3. Редактировать адрес');
+									writeln('4. Редактировать ФИО директора');
+									writeln('5. Редактировать часы работы магазина');
+									writeln('6. Редактировать время для перерыва');
+									writeln('7. Редактировать выходные дни');
+									writeln('8. Закончить редактирование');
+									write('Введите номер операции >');
+									readln(operationNumberEnteredByTheUser);
+									case operationNumberEnteredByTheUser of
+										1 : begin  
+													write('Номер магазина: '); readln(storeNumber);
+													repeatStoreNumber(topOfTheList,storeNumber);
+													storeNumber:=storeNumberF;
+													shopList^.number:=storeNumber;
+												  end;
+										2 : begin  write('Название магазина: '); readln(shopList^.name); end;
+										3 : begin  write('Адрес магазина: '); readln(shopList^.address); end;
+										4 : begin  write('ФИО директора: '); readln(shopList^.fullNameOfTheDirector); end;
+										5 : begin
+													writeln;
+													write('Часы работы магазина(введите время по формату HH:MM-HH:MM)  ');
+													EnterTime;
+													shopList^.workingHours.hoursW1:=hoursAI;
+													shopList^.workingHours.minutesW1:=minutesAI;
+													shopList^.workingHours.hoursW2:=hoursBI;
+													shopList^.workingHours.minutesW2:=minutesBI;
+													writeln ('Вы ввели, что рабочие часы магазина - с ',
+													shopList^.workingHours.hoursW1,
+													' : ',
+													shopList^.workingHours.minutesW1,
+													'  До - ',
+													shopList^.workingHours.hoursW2,
+													' : ',
+													shopList^.workingHours.minutesW2);
+												end;
+										6 : begin  
+													writeln;
+													write(' Введите время для перерыва (вводите время по формату HH:MM-HH:MM) '); 
+													EnterTime;
+													shopList^.breakHours.hoursB1:=hoursAI;
+													shopList^.breakHours.minutesB1:=minutesAI;
+													shopList^.breakHours.hoursB2:=hoursBI;
+													shopList^.breakHours.minutesB2:=minutesBI;
+													writeln ('Вы ввели перерыв с: ',
+													shopList^.breakHours.hoursB1,
+													' : ',
+													shopList^.breakHours.minutesB1,
+													' До - ',
+													shopList^.breakHours.hoursB2,
+													' : ',
+													shopList^.breakHours.minutesB2);
+												end;
+										7 : begin
+													writeln;
+													writeln('Выходные дни (чтобы обнулить все выходные сразу окончите ввод ) :');
+													SelectWeekends;
+													for i:=1 to 7 do 
+														begin
+															shopList^.workingOrNonWorkingHours[i]:=WeakendDays[i];
+														end;
+													end;
+									end;
+								until operationNumberEnteredByTheUser=8;
+								shopList:=shopList^.nextPointer;
+								editingAStore:=shopList;								
+							end
+							else
+								begin
+									allInappropriateStoresByNumber:=allInappropriateStoresByNumber+1;
+									shopList:=shopList^.nextPointer;
+									editingAStore:=shopList;
+								end;
+							
+					end;
+		end;				
+	
+	{Процедура для редактирования магазина (включает в себя: editingAStore)}
+	procedure editingStoresWithPossibleErrors;
+	var 
+	i: integer;
+		begin
+			clrscr;
+			write('Введите номер магазина >');
+			readln(numberOfStreInteredByUser);
+			writeln('День недели номер: ',numberOfStreInteredByUser);
+			tmpl:=editingAStore(topOfTheList,numberOfStreInteredByUser);
+			writeln('totalNumberOfStores: ',totalNumberOfStores);
+			writeln('allInappropriateStoresByNumber: ',allInappropriateStoresByNumber);
+			if allInappropriateStoresByNumber=totalNumberOfStores then
+				begin
+					write('Магазина с таким номером нет.');
+				end;
+			readkey;	
+		end;
+	
 	{Функция обработки данных, вывод магазинов, работающих в указанный день}
 	Function dayDataProcessing(shopList:recordPointer;dayNumberEnteredByTheUser:integer):recordPointer;
 	var j: integer;
@@ -420,6 +547,7 @@ VAR
 					end;
 		end;				
 	
+	
 	{Процедура для вывода магазинов, работающих в указанный день (включает в себя: dayDataProcessing)}
 	procedure PrintWorkingShops;
 	var 
@@ -442,8 +570,57 @@ VAR
 				end;
 			readkey;	
 		end;
-
-
+		
+	{Процедура для считывания из файла (LB13.txt)}
+	procedure ReadFromFile;
+		var l,k:byte;
+			begin
+				Assign(f, 'LB13.txt');
+				reset(f);
+				while not EOF(f) do
+					begin
+						readln(totalNumberOfStores);
+						readln(topOfTheList);
+						readln(endOfTheList);
+						while shopList<>nil do
+							begin
+								readln;
+								readln('Номер магазина: ',shopList^.number, ' ');
+								readln('Название магазина: ',shopList^.name, ' ');
+								readln('Адрес магазина: ',shopList^.address, ' ');
+								readln('ФИО директора: ',shopList^.fullNameOfTheDirector, ' ');
+								readln('Часы работы магазина: C - ',
+									shopList^.workingHours.hoursW1,
+									' : ',
+									shopList^.workingHours.minutesW1,
+									'  До - ',
+									shopList^.workingHours.hoursW2,
+									' : ',
+									shopList^.workingHours.minutesW2);
+								readln('Перерыв: C ',
+									shopList^.breakHours.hoursB1,
+									' : ',
+									shopList^.breakHours.minutesB1,
+									' До - ',
+									shopList^.breakHours.hoursB2,
+									' : ',
+									shopList^.breakHours.minutesB2);
+								for j:=1 to 7 do 
+									begin 
+										if shopList^.workingOrNonWorkingHours[j]=0 then 
+											begin
+												readln(weekdayPairs[j].name:11, ' - выходной');	
+											end;
+										if shopList^.workingOrNonWorkingHours[j]=1 then 
+											begin
+												readln(weekdayPairs[j].name:11, ' - рабочий день');
+											end;
+									end;
+								shopList:=shopList^.nextPointer
+							end;
+					 end;
+				Close(f);
+		end;
 begin
 	clrscr;
 	totalNumberOfStores:=0;
@@ -467,11 +644,14 @@ begin
 	{------------------}
   topOfTheList:=nil;
   endOfTheList:=nil;
+	ReadFromFile;
 	repeat
 		clrscr;
 		Writeln('1) Добавить магазин.');
     Writeln('2) Вывод списка магазинов.');
 		Writeln('3) Обработка данных.');
+		Writeln('4) Редактирование данных.');
+		Writeln('5) Запись данных в файл.');
     Writeln('9) Выход.');
 		menuOptionSelection:=readkey;
 			case menuOptionSelection of
@@ -481,12 +661,35 @@ begin
 						end;
 						
 				'2':begin
-							printTheStores(topOfTheList);
+							PrintAllStores;
 						end;
 						
 				'3':begin
 							PrintWorkingShops;
 						end;
-			end;
+						
+				'4':begin
+							editingStoresWithPossibleErrors;
+						end;
+						
+				'5':begin
+							Assign(f, 'LB13.txt');
+							Rewrite(f);
+							printTheStores(topOfTheList);
+							Close(f);
+							writeln(' ***** Записано в файл LB13.txt ******');
+							WriteLn('Нажмите любую клавишу');
+							readkey;
+							clrscr;
+						end;
+				
+				'6':begin
+							ReadFromFile;
+							writeln(' ***** Прочитано из файла LB13.txt ******');
+							WriteLn('Нажмите любую клавишу');
+							readkey;
+							clrscr;
+						end;
+				end;
   until menuOptionSelection='9';	
 end.
